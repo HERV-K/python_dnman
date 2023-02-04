@@ -1,4 +1,3 @@
-import textwrap
 import os
 from tkinter import ttk
 import tkinter.messagebox as msgbox
