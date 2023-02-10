@@ -15,9 +15,7 @@ import cv2
 # 무언가 버튼을 누르면 라벨의 내용을 지우고 무슨 작업이 실행되었는지 알려주어야
 #db에 추가하는 기능 추가해야
 
-
 # 윈도우1에서 입력이 완료된 파일을 약 10~20개씩 묶어 인터넷 검색하다가 오류 났을 때 처음부터 다시해야 하는 것을 방지하는 기능 추가해야
-
 
 #neowindow1 : 약이름 받고 리스트 만들기
 
@@ -25,9 +23,6 @@ root = Tk()
 
 root.title("drug db management system")
 root.geometry("1000x500+100+50")
-
-
-
 
 
 def calculateimagesize(imagetocal):
@@ -54,7 +49,6 @@ def changeimagesize2(imagetochange, size):
         image9 = image.resize((round(int(imagesize[0]) * int(size)/int(imagesize[1])), int(size)))
     return image9
     pass
-
 
 def openneowindow1():
     global neowindow1
@@ -771,7 +765,6 @@ def openneowindow3():
     btn_w3_molecularstr = Button(neowindow3,text="분자구조",width=40 ,height=8)
     btn_w3_molecularstr.grid(row=7, column=1, columnspan=2, rowspan=8, sticky=W + E + N + S)
 
-
 def openneowindow4():
     global neowindow4
     neowindow4 = Toplevel(root)
@@ -1423,11 +1416,8 @@ def openneowindow5():
 
     pass
 
-
-
 driveurl_pythofolder = r"C:\OneDrive\Drug structure DB\dbmansys\drugnamedb.txt"
-
-
+########이 아래는 다 함#########################
 def showdbonmainscreen():
     label_direction.config(text="")
     text_screen_big.delete("1.0", END)
