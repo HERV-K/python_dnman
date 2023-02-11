@@ -134,7 +134,7 @@ def openneowindow1():
     #1.3.1.1 윈도우1 생성
     global neowindow1
     neowindow1 = Toplevel(root)
-    neowindow1.geometry("1200x600+100+100")
+    neowindow1.geometry("1200x800+100+100")
 
     #1.3.1.2 윈도우1 기초 레이아웃
     label_w1_top = Label(neowindow1, text="폴더 이름을 입력하세요")
@@ -285,21 +285,32 @@ def openneowindow1():
         #2. 텍스트 불러오기
         dict1 = getdictfromtxt(PATHTXT, " : ")
         tofindlist = list(dict1.keys())
+        print(f"dict1은 {dict1} 입니다.")
+        print(f"tofindlist는 {tofindlist} 입니다.")
+        dict11 = {}
         #3. : PASS 인 녀석 빼기
         dict2 = {}
         for ind, i in enumerate(tofindlist):
             if dict1[i] == "PASS":
                 pass
             elif dict1[i] != " ":
+                dict11[i] = dict1[i]
                 pass
             else:
                 dict2[i] = i
+                dict11[i] = dict1[i]
 
         #4. smile 가져오기
         browser = webdriver.Chrome()
-        browser.maximize_window()
+        # browser.maximize_window()
         url = "https://go.drugbank.com/"
         listtofind = list(dict2.keys())
+        listtofind2 = list(dict11.keys())
+        print(f"listtofind는 {listtofind} 입니다.")
+        print(f"dict11은 {dict11} 입니다.")
+        print(f"listtofind2는 {listtofind2} 입니다.")
+        print("###########################################################################################################")
+        text_screen_big.delete("1.0", END)
         smilelist = []
         for i in listtofind:
             browser.get(url)
@@ -309,56 +320,151 @@ def openneowindow1():
             button.click()
 
             parent = browser.find_element(By.XPATH,"/html/body/main/div/div/div[2]/div[1]")
-            print(len(parent.find_elements(By.TAG_NAME, "h1")))
             
             tester1 = len(parent.find_elements(By.TAG_NAME, "h1"))
             if tester1 ==0:
-                print("ERROR")
                 text_screen_big.insert(END, f"{i}\n")
                 smilelist.append("ERROR")
+                print(f"{i} 는 데이타베이스에 없거나 오타가 났을 것입니다...")
             else:
-    
                 parent = browser.find_element(By.XPATH, "/html/body/main/div/div/div[2]/div[2]/dl[6]")
                 dt = parent.find_elements(By.TAG_NAME, "dt")
                 dd = parent.find_elements(By.TAG_NAME, "dd")
-                listdttxt = []
-                for ind in dt:
-                    listdttxt.append(ind.text)
-                listddtxt = []
-                for ind in dd:
-                    listddtxt.append(ind.text)
-                dtd = list(zip(listdttxt, listddtxt))
-                smilelist.append(dtd[len(dtd) - 1][1])
-                print(i, dtd[len(dtd) - 1][1])
-                # print(dtd[len(dtd) - 2][1])
-                nameandsmile = list(zip(listtofind, smilelist))
+                checklist = []
+                for ind, inn in enumerate(dt):
+                    checklist.append(inn.text)
+
+                if "SMILES" in checklist:
+                    listdttxt = []
+                    for ind in dt:
+                        listdttxt.append(ind.text)
+                    listddtxt = []
+                    for ind in dd:
+                        listddtxt.append(ind.text)
+                    dtd = list(zip(listdttxt, listddtxt))
+                    smilelist.append(dtd[len(dtd) - 1][1])
+                    print(f"{i}의 SMILES는 {dtd[len(dtd) - 1][1]} 입니다.")
+                    
+                else:
+                    text_screen_big.insert(END, f"{i}\n")
+                    smilelist.append("ERROR")
+                    print(f"{i}는 저분자화합물이 아닌 듯 합니다...")
+        nameandsmile = list(zip(listtofind, smilelist))
+
+
         dict_smiles = {}
         for ind, i in enumerate(listtofind):
             dict_smiles[i] = nameandsmile[ind][1]
-        print(dict_smiles)
+        print("###############################################################################################################")
+        print("결과 리스트(dict_smiles) : ", dict_smiles)
 
         #6. txt에 저장
         file_opened = open(PATHTXT, "w", encoding="utf8")
-        #검색한 약에 한해 덮어쓴다.
-        #dict1 : 전체 딕셔너리
-        #dict2 : 검색할 녀석
-        dict_old = {}
-        dict_new = {}
+        dict_PASS = {}
+        dict_OLD = {}
+        dict_ERROR = {}
+        dict_SMILES = {}
 
+
+        for ind, i in enumerate(tofindlist):
+            if i not in listtofind2: #PASS
+                dict_PASS[i] = "PASS"
+            elif i in listtofind2 and i not in listtofind: # 옛날부터 있던애
+                dict_OLD[i] = dict11[i]
+            elif i in listtofind:
+                dict_SMILES[i] = dict_smiles[i]
+            else:
+                pass
         
 
+
+        # for ind, i in enumerate(tofindlist):
+        #     if i not in list(dict11.keys()): # PASS인 애
+        #         dict_PASS[i] = "PASS"
+        #     elif dict_smiles[i] == "ERROR": #ERROR인 애
+        #         dict_ERROR[i] = "ERROR"
+        #     else:
+        #         dict_SMILES[i] = dict_smiles[i]
         
-
-
-
-                
-
-        # file_opened = open(PATHTXT, "w", encoding="utf8")
+        dict3 = {**dict_OLD, **dict_SMILES, **dict_PASS, **dict_ERROR}
+        dict4 = {}
+        list2 = sorted(list(dict3.keys()))
+        for ind, i in enumerate(list2):
+            dict4[i] = dict3[i]
+        print(f"dict4 는 {dict4} 입니다. txt에 쓰겠읍니다.")
+        for code, name in dict4.items():
+            file_opened.write(f"{code} : {name}\n")
+        file_opened.close()
 
 
 
     btn_w1_getsmile = Button(neowindow1, text="smiles",command=partial(getsmiles,r"C:\OneDrive\DDB", combox_w1_sub.get(), ent_w1_newfilename))
     btn_w1_getsmile.grid(row=16,column=7,sticky=N+W+E+S)
+
+    #1.3.1.7 smile서 구조 얻기
+
+    def getstrimg(pathurl, foldernomen, foldernomen2):
+        #1. 경로설정
+        PATH1 = pathurl
+        PATH2 = PATH1 + f"\{foldernomen}"
+        txturl = PATH2 + f"\{foldernomen}_tableofcontents.txt"
+        foldernomen2 = int(foldernomen2.get())
+        PATH3 = PATH2 + f"\{getnamefromtoc(txturl, foldernomen2)}"
+        txtnametohave = f"{getnamefromtoc(txturl, foldernomen2)}.txt"
+        PATHTXT = PATH3 + f"\{txtnametohave}"
+
+        #2. 경로에 사진 폴더 생성하기
+        foldernametohave = f"{getnamefromtoc(txturl, foldernomen2)}_pngs"
+        checkfolderpath(PATH3, foldernametohave)
+        PATH4 = PATH3 + f"\{foldernametohave}"
+
+        #3. 구조 가져올 txt 열기
+        dict1 = getdictfromtxt(PATHTXT, " : ")
+        print("dict1은 ",dict1)
+
+        #4. dict1에서 smile 있는 놈만 추출
+        dict2 = {}  # dict2는,, dict1서 smile 있는 놈만 추출한 딕셔너리
+        for ind, i in enumerate(dict1.keys()):
+            if dict1[i] == "PASS":
+                pass
+            elif dict1[i] == "ERROR":
+                pass
+            else:
+                dict2[i] = dict1[i]
+        print("dict2는 ", dict2)
+        list1 = list(dict2.values())
+        list2 = list(dict2.keys())
+        print("list1은 ", list1)
+
+        #5. 구조 가져오기
+        browser = webdriver.Chrome()
+        # browser.maximize_window()
+        url = "http://cdb.ics.uci.edu/cgibin/Smi2DepictWeb.py"
+        browser.get(url)
+        searchtab = browser.find_element(By.ID, "smiles")
+        searchtab.clear()
+
+        for i in list1:
+            searchtab.send_keys(i)
+            searchtab.send_keys(Keys.RETURN)
+
+        btn = browser.find_element(By.XPATH, '//*[@id="Smi2DepictWeb"]/div[1]/div[5]/button')
+        btn.click()
+        time.sleep(2)
+        img3 = browser.find_elements(By.CLASS_NAME, "shadow")
+
+        for index, image in enumerate(img3):
+            src = image.get_attribute("src")
+            t = urlopen(src).read()
+            file = open(os.path.join(PATH4, f"{list2[index]}.png"), "wb")
+            file.write(t)
+            print(list2[index])
+        browser.close()
+
+
+    btn_w1_getstrimg = Button(neowindow1, text="구조",command=partial(getstrimg,r"C:\OneDrive\DDB", combox_w1_sub.get(), ent_w1_newfilename))
+    btn_w1_getstrimg.grid(row=17,column=7,sticky=N+W+E+S)
+
 
     
 
