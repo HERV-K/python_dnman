@@ -1341,6 +1341,322 @@ def openneowindow4():
     #해결책,, 사진 만드는 함수 때로 만들고 이 함수가 투명여부 선택받아,, table 제작 시에는 흰배경, 아님 투명배경이 되도록 하는 방법이 있다.
     #구상... txt이미지 만드는애, txt 딸린 개별사진 제작기, table 제작기 ,,,사진 크기 조정하는 함수&저장함수, 는 개별생성, 
 
+def openneowindow5():
+    global neowindow5
+    neowindow5 = Toplevel(root)
+    neowindow5.geometry("1200x700+100+100")
+
+    label_w5_top = Label(neowindow5, text="폴더 이름을 입력하세요")
+    label_w5_top.grid(row=0,column=1,columnspan=5,sticky=N+W+E+S)
+    ent_w5_newfilename = Entry(neowindow5)
+    ent_w5_newfilename.grid(row=1,column=1,columnspan=4,sticky=N+W+E+S)
+
+    global listofsubs
+    combox_w5_sub = ttk.Combobox(neowindow5, values=listofsubs)
+    combox_w5_sub.current(0)
+    combox_w5_sub.grid(row=1,column=5,sticky=N+W+E+S)
+
+    def openchemsketch():
+        # 2. 켐스케치 버튼을 누른다.
+        icon_chemsketch = pygui.locateOnScreen("chemsketchicon.png", confidence=0.7, region=(
+        168, 1027, 1452 - 168, 1078 - 1027))  # region = (x, y, wid, hei) )
+        print(icon_chemsketch)
+        pygui.click(icon_chemsketch)
+        print("켐스케치를 실행합니다.")
+        pygui.sleep(3)
+
+        # 3. 화면창에서 ok버튼을 누른다.
+        icon_chemsketchokbutton = pygui.locateOnScreen("chemsketch_okbutton.png", confidence=0.96)
+        while icon_chemsketchokbutton is None:
+            icon_chemsketchokbutton = pygui.locateOnScreen("chemsketch_okbutton.png", confidence=0.96)
+            print("시ㄹ패")
+        pygui.click(icon_chemsketchokbutton)
+        print("빈 화면이 나타납ㅂ니다.")
+        pygui.sleep(2)
+        global openedwindow
+        # 4. 전체화면을 만든다.
+        openedwindow = pygui.getActiveWindow()
+        openedwindow.maximize()
+        print(openedwindow.title)
+
+
+
+        # #################
+        ################
+        ############# preference에서 비율 고정을 선택한다.
+        pass
+
+    def opensmileenterwin():
+        global openedwindow
+        #5. smile 입력창을 연다.
+        openedwindow.activate()
+        pygui.sleep(3)
+        icon_toolsbutton = pygui.locateOnScreen("chemsketch_toolsbutton.png", confidence=0.99)
+        pygui.click(icon_toolsbutton, duration = 0.1)
+        print("tools를 눌렀읍니다.")
+        pygui.sleep(0.1)
+
+        icon_generatebutton = pygui.locateOnScreen("chemsketch_generatebutton.png", confidence=0.99)
+        pygui.click(icon_generatebutton, duration = 0.1)
+        print("generate를 눌렀읍니다.")
+        pygui.sleep(0.1)
+
+        icon_formsmilebutton = pygui.locateOnScreen("chemsketch_fromsmilebutton.png", confidence=0.99)
+        pygui.click(icon_formsmilebutton, duration = 0.1)
+        print("smile로 만들기 창으로 진입합니다.")
+        pygui.sleep(0.5)
+        """
+        # 6-1. 파일에서 목록을 불러온다.
+
+        filename = ent_w5_filename.get()
+        PATH = "C:\OneDrive\Drug structure DB\dbmansys"
+        PATHtosave = PATH + f"\{filename}_result.txt"
+        w5txttofindstr = open(PATHtosave, "r", encoding="utf8")
+        lines = w5txttofindstr.readlines()
+        w5dic1 = {}
+        for ind, i in enumerate(lines):
+            w5dic1[i[0:i.index(":") - 1]] = i[i.index(":") + 2: i.index("\n")]
+        w5done1 = list(w5dic1.keys())
+        w5txttofindstr.close()
+
+        
+        # 6-2. 입력창에 smile을 입력합니다.
+        smilewindow = pygui.getActiveWindow()
+        smilewindow.activate()
+        pygui.sleep(0.1)
+        pygui.write("aaaas@@[s]s", interval=0.07)
+        """
+
+    def getdrugnamesformfolder(pathurl, foldernomen, foldernomen2):
+        #1. 경로설정
+        # foldernomen = foldernomen.get()
+        foldernomen2 = int(foldernomen2.get())
+        PATH1 = pathurl
+        PATH2 = PATH1 + f"\{foldernomen}"
+        txturl = PATH2+f"\{foldernomen}_tableofcontents.txt"
+        PATH3 = PATH2 + f"\{getnamefromtoc(txturl, foldernomen2)}"
+        txtnametohave = f"{getnamefromtoc(txturl, foldernomen2)}.txt"
+        PATHTXT = PATH3 + f"\{txtnametohave}"
+        foldernametohave = f"{getnamefromtoc(txturl, foldernomen2)}_pngs"
+        PATH4 = PATH3 + f"\{foldernametohave}"
+
+        #2. 폴더내 리스트 가져오기
+        list1 = os.listdir(PATH4)
+
+        #3. list1 중에서 png 파일만 가져오기
+        list2 = [] # list2는 사진 파일 이름 중의 약물이름이다.
+        for ind, i in enumerate(list1):
+            if i[i.index(".")+1:len(i)] == "png":
+                list2.append(i[0:i.index(".")])
+        return list2
+
+    #5.1 폴더 내 이미지 가져오는 함수
+    def getimgsfromfolder(pathurl, foldernomen, foldernomen2):
+        foldernomen = foldernomen.get()
+        namelist = getdrugnamesformfolder(pathurl, foldernomen, foldernomen2)
+        foldernomen2 = int(foldernomen2.get())
+        PATH1 = pathurl
+        PATH2 = PATH1 + f"\{foldernomen}"
+        txturl = PATH2+f"\{foldernomen}_tableofcontents.txt"
+        PATH3 = PATH2 + f"\{getnamefromtoc(txturl, foldernomen2)}"
+        txtnametohave = f"{getnamefromtoc(txturl, foldernomen2)}.txt"
+        PATHTXT = PATH3 + f"\{txtnametohave}"
+        foldernametohave = f"{getnamefromtoc(txturl, foldernomen2)}_pngs"
+        PATH4 = PATH3 + f"\{foldernametohave}"
+        PATH5 = PATH3 + f"\{foldernametohave}" + r"\\"
+        
+        
+        listofimgs = glob.glob(PATH5+"*.png")
+        return listofimgs
+        # img9 = Image.open(listofimgs[1])
+        # img9.show()
+
+    def makestructures(pathurl, foldernomen, foldernomen2):
+
+        #경로설정
+        global openedwindow
+        #6.1 파일목록 불러오기
+        list_test = getimgsfromfolder(pathurl, foldernomen, foldernomen2)
+        foldernomen = foldernomen.get()
+        namelist = getdrugnamesformfolder(pathurl, foldernomen, foldernomen2)
+        foldernomen2 = int(foldernomen2.get())
+        PATH1 = pathurl
+        PATH2 = PATH1 + f"\{foldernomen}"
+        txturl = PATH2+f"\{foldernomen}_tableofcontents.txt"
+        PATH3 = PATH2 + f"\{getnamefromtoc(txturl, foldernomen2)}"
+        txtnametohave = f"{getnamefromtoc(txturl, foldernomen2)}.txt"
+        PATHTXT = PATH3 + f"\{txtnametohave}"
+        foldernametohave = f"{getnamefromtoc(txturl, foldernomen2)}_pngs"
+        PATH4 = PATH3 + f"\{foldernametohave}"
+        PATH5 = PATH3 + f"\{foldernametohave}" + r"\\"
+
+
+        #2. db 가져오기
+        PATHDB = r"C:\OneDrive\DDB\DBtxtfiles\drugnamedb.txt"
+        dict_db = getdictfromtxt(PATHDB," : ")
+        # print(f"dict_db는 {dict_db} 입니다.")
+
+        #2.2
+        dict1 = getdictfromtxt(PATHTXT, " : ")
+
+        #3. db 거르기
+        dict2 = {}  # dict2는,, dict1서 smile 있는 놈만 추출한 딕셔너리
+        for ind, i in enumerate(dict1.keys()):
+            if dict1[i] == "PASS":
+                pass
+            elif dict1[i] == "ERROR":
+                pass
+            else:
+                dict2[i] = dict1[i]
+        list1 = list(dict2.values())
+        list2 = list(dict2.keys())
+        print(list2)
+
+
+        #6-2 파일목록의 약물 입력
+        openedwindow.activate()
+        pygui.sleep(3)
+
+        #db에서 ERROR, PASS 빼고 dict을 만들어 아래 for문에 입력
+
+        for ind, i in enumerate(list2):
+            icon_toolsbutton = pygui.locateOnScreen("chemsketch_toolsbutton.png", confidence=0.99)
+            pygui.click(icon_toolsbutton, duration=0.05)
+            print("tools를 눌렀읍니다.")
+            pygui.sleep(0.1)
+
+            icon_generatebutton = pygui.locateOnScreen("chemsketch_generatebutton.png", confidence=0.99)
+            pygui.click(icon_generatebutton, duration=0.05)
+            print("generate를 눌렀읍니다.")
+            pygui.sleep(0.1)
+
+            icon_formsmilebutton = pygui.locateOnScreen("chemsketch_fromsmilebutton.png", confidence=0.99)
+            pygui.click(icon_formsmilebutton, duration=0.05)
+            print("smile로 만들기 창으로 진입합니다.")
+            pygui.sleep(0.5)
+            smilewindow = pygui.getActiveWindow()
+            smilewindow.activate()
+            pygui.sleep(0.1)
+            pygui.write(dict2[i], interval=0.003)
+            pygui.keyDown("enter")
+            pygui.sleep(0.2)
+            pygui.keyDown("enter")
+            pygui.sleep(0.2)
+            #966,422 30,31,34 #1E1F22
+            pygui.click(966, 850)
+            pygui.sleep(0.3)
+
+
+            icon_nextpagebutton = pygui.locateOnScreen("chemsketch_nextpagebutton.png", confidence=0.99)
+            pygui.click(icon_nextpagebutton, duration=0.1)
+            pygui.sleep(0.3)
+
+
+
+    def saveimages(pathurl, foldernomen, foldernomen2):
+
+        list_test = getimgsfromfolder(pathurl, foldernomen, foldernomen2)
+        foldernomen = foldernomen.get()
+        namelist = getdrugnamesformfolder(pathurl, foldernomen, foldernomen2)
+        foldernomen2 = int(foldernomen2.get())
+        PATH1 = pathurl
+        PATH2 = PATH1 + f"\{foldernomen}"
+        txturl = PATH2+f"\{foldernomen}_tableofcontents.txt"
+        PATH3 = PATH2 + f"\{getnamefromtoc(txturl, foldernomen2)}"
+        txtnametohave = f"{getnamefromtoc(txturl, foldernomen2)}.txt"
+        PATHTXT = PATH3 + f"\{txtnametohave}"
+        foldernametohave = f"{getnamefromtoc(txturl, foldernomen2)}_pngs"
+        PATH4 = PATH3 + f"\{foldernametohave}"
+        PATH5 = PATH3 + f"\{foldernametohave}" + r"\\"
+
+
+        #2. db 가져오기
+        PATHDB = r"C:\OneDrive\DDB\DBtxtfiles\drugnamedb.txt"
+        dict_db = getdictfromtxt(PATHDB," : ")
+        # print(f"dict_db는 {dict_db} 입니다.")
+
+        #2.2
+        dict1 = getdictfromtxt(PATHTXT, " : ")
+
+        #3. db 거르기
+        dict2 = {}  # dict2는,, dict1서 smile 있는 놈만 추출한 딕셔너리
+        for ind, i in enumerate(dict1.keys()):
+            if dict1[i] == "PASS":
+                pass
+            elif dict1[i] == "ERROR":
+                pass
+            else:
+                dict2[i] = dict1[i]
+        list1 = list(dict2.values())
+        list2 = list(dict2.keys())
+        print(list2)
+
+
+        
+        global openedwindow
+        pygui.sleep(5)
+
+
+        for ind, i in enumerate(list2):
+            icon_filesbutton = pygui.locateOnScreen("chemsketch_filesbutton.png", confidence=0.99)
+            pygui.click(icon_filesbutton, duration=0.1)
+            print("tools를 눌렀읍니다.")
+            pygui.sleep(0.1)
+
+            icon_saveasbutton = pygui.locateOnScreen("chemsketch_saveasbutton.png", confidence=0.99)
+            pygui.click(icon_saveasbutton, duration=0.1)
+            pygui.sleep(1)
+
+            #####
+            smilewindow = pygui.getActiveWindow()
+            smilewindow.activate()
+            pygui.sleep(0.1)
+            pygui.write(i, interval=0.03)
+            pygui.keyDown("tab")
+            pygui.sleep(0.1)
+            ####
+
+            icon_savefileformatbutton = pygui.locateOnScreen("chemsketch_savefileformatbutton.png", confidence=0.99)
+            pygui.click(icon_savefileformatbutton, duration=0.1)
+            pygui.sleep(0.15)
+
+            icon_pngbutton = pygui.locateOnScreen("chemsketch_pngbutton.png")
+            pygui.click(icon_pngbutton, duration=0.1)
+            pygui.sleep(0.2)
+
+            pygui.keyDown("enter")
+            pygui.sleep(0.5)
+            icon_saveyesbutton = pygui.locateOnScreen("chemsketch_saveyesbutton.png")
+            pygui.click(icon_saveyesbutton, duration=0.1)
+            pygui.sleep(0.5)
+
+            icon_savenextpagebutton = pygui.locateOnScreen("chemsketch_savenextpagebutton.png")
+            pygui.click(icon_savenextpagebutton, duration=0.1)
+            pygui.sleep(0.3)
+        
+
+
+    btn_w5_3 = Button(neowindow5, text = "켐스케치 실행" , width=20, command=openchemsketch)
+    btn_w5_3.grid(row=2, column=1, sticky=W + E + N + S)
+
+    btn_w5_4 = Button(neowindow5, width=20, text="테스트.." , command=opensmileenterwin)
+    btn_w5_4.grid(row=2, column=2, sticky=W + E + N + S)
+
+    btn_w5_5 = Button(neowindow5, width=20, text="구조만들기", command=partial(makestructures, r"C:\OneDrive\DDB", combox_w5_sub, ent_w5_newfilename))
+    btn_w5_5.grid(row=2, column=3, sticky=W + E + N + S)
+
+    btn_w5_6 = Button(neowindow5, width=20, text="저장(첫사진저장해야)", command=partial(saveimages, r"C:\OneDrive\DDB", combox_w5_sub, ent_w5_newfilename))
+    btn_w5_6.grid(row=2, column=4, sticky=W + E + N + S)
+
+    text_w5_screen = Text(neowindow5, height=25)
+    text_w5_screen.grid(row=3, column=1, columnspan=4, rowspan=10, sticky=W + E + N + S)
+
+    btn_w5_makeindimg = Button(neowindow5, text="개별사진", width=20, bg="white", fg="white")
+    btn_w5_makeindimg.grid(row=5, column=5, sticky=W + E + N + S)
+
+    btn_w5_maketable = Button(neowindow5, text="장표", bg="white", fg="white", width=20)
+    btn_w5_maketable.grid(row=11, column=5, sticky=W + E + N + S)
+
 
     
 
@@ -1394,6 +1710,9 @@ btn_openneowindow3.grid(row=2, column=7,sticky=N+W+E+S)
 
 btn_openneowindow4 = Button(root, text="사진", width=20,command=openneowindow4)
 btn_openneowindow4.grid(row=3, column=7,sticky=N+W+E+S)
+
+btn_openneowindow5 = Button(root, text="켐스케치", width=20,command=openneowindow5)
+btn_openneowindow5.grid(row=4, column=7,sticky=N+W+E+S)
 
 # btn_openneowindow2 = Button(root, text="DB에 한글명 넣기", width=20, command=openneowindow3)
 # btn_openneowindow2.grid(row=2, column=7,sticky=N+W+E+S)
