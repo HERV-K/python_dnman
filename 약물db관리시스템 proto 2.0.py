@@ -1,21 +1,31 @@
 import os
+import glob
+
 from tkinter import ttk
 import tkinter.messagebox as msgbox
 from tkinter import *
 from tkinter import filedialog
+
 from PIL import Image, ImageDraw, ImageFont, ImageTk
+import cv2
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+
 import time
 from urllib.request import urlopen
 import pyautogui as pygui
-import cv2
 from functools import partial
+import math
 #cf. 메모장
 #셀레늄으로 크롤링할 때 해당 약물 창 안나오는 애는 txt 파일에 Acetaminophen : PASS 로 나타나게 하고
 # 나중에 smile서 구조 그릴 때 PASS인 녀석은 빼는 걸로,,
 
+#### 사진 긁어오기 할 때 사진폴더에 있는 사진에 대해서는  PASS 시전하는 코드 필요
+
+global listofsubs
+listofsubs = ["Pharmacology_katsung", "Medicinal chemistry", "Antibiotics"]
 
 #1. 과목 폴더 규칙
 #1.1 구성
@@ -64,8 +74,6 @@ def getlistfrompathurl2(pathurl):
             folderslist2.append(" ")
     return folderslist2
             
-
-
 #1.2.2 폴더존재여부확인 - 입력한 이름의 폴더 있는지 확인하고 없으면 생성
 def checkfolderpath(pathurl, foldernomen):
     pathtocheck = pathurl + f"\{foldernomen}"
@@ -123,8 +131,6 @@ def getnamefromtoc(pathurloftxt, numb):
     return filefullname
 
 # getnamefromtoc(r"C:\OneDrive\DDB\Pharmacology_katsung\Pharmacology_katsung_tableofcontents.txt", 1)
-
-
 # deffilename(r"C:\OneDrive\DDB\Pharmacology_katsung", r"C:\OneDrive\DDB\Pharmacology_katsung\Pharmacology_katsung_tableofcontents.txt", "")
 
 
@@ -148,8 +154,7 @@ def openneowindow1():
     scrollbar_w1_text.config(command=text_w1_input.yview)
 
     #1.3.1.3 콤보박스들
-
-    listofsubs = ["Pharmacology_katsung", "Medicinal chemistry"]
+    global listofsubs
     combox_w1_sub = ttk.Combobox(neowindow1, values=listofsubs)
     combox_w1_sub.current(0)
     combox_w1_sub.grid(row=2,column=5,sticky=N+W+E+S)
@@ -162,6 +167,8 @@ def openneowindow1():
         btn_w1_getdrugnames.update()
         #1. url지정
         foldernomen2 = int(foldernomen2.get())
+        print(f"foldernomen2 = {foldernomen2}")
+        foldernomen = foldernomen.get()
         PATH1 = pathurl
         PATH2 = PATH1 + f"\{foldernomen}"
         txturl = PATH2+f"\{foldernomen}_tableofcontents.txt"
@@ -183,17 +190,21 @@ def openneowindow1():
             else:
                 folderslist3.append(i)
         
-
-        for ind, i in enumerate(folderslist3):
-            if int(str(i)) == int(str(foldernomen2)):
-                check1 = 0
-                PATH5 = PATH2 + f"\{folderslist[ind]}"
-                PATH6 = PATH2 + f"\{getnamefromtoc(txturl, foldernomen2)}"
-                os.rename(PATH5, PATH6)
-                break
-            else:
-                check1 = 1
-        print(f"ckeck1(입력값에 해당하는 숫자가 폴더내 파일 숫자 리스트에 있으면 0, 아님 1) = {check1}")
+        if folderslist2 == [" "]:
+            check1 = 1
+        else:
+            for ind, i in enumerate(folderslist3):
+                if int(str(i)) == int(str(foldernomen2)):
+                    print(int(str(i)))
+                    check1 = 0
+                    PATH5 = PATH2 + f"\{folderslist[ind]}"
+                    PATH6 = PATH2 + f"\{getnamefromtoc(txturl, foldernomen2)}"
+                    os.rename(PATH5, PATH6)
+                    break
+                else:
+                    check1 = 1
+            print(f"ckeck1(입력값에 해당하는 숫자가 폴더내 파일 숫자 리스트에 있으면 0, 아님 1) = {check1}")
+            
         #5. check1이 1이면 폴더를 생성
         if check1 == 1:
             PATH3 = PATH2 + f'\{getnamefromtoc(txturl, foldernomen2)}'
@@ -208,7 +219,7 @@ def openneowindow1():
             print("###")
             print("###")
                 
-    btn_w1_maketxt = Button(neowindow1, text = "파일폴더 검사", command=partial(checkfileandfolders, r"C:\OneDrive\DDB", combox_w1_sub.get(), ent_w1_newfilename))
+    btn_w1_maketxt = Button(neowindow1, text = "파일폴더 검사", command=partial(checkfileandfolders, r"C:\OneDrive\DDB", combox_w1_sub, ent_w1_newfilename))
     btn_w1_maketxt.grid(row=3,column=1,columnspan=4,sticky=N+W+E+S)
 
     #1.3.1.5 텍스트창에 입력한 약물 txt에 옮기기
@@ -224,6 +235,7 @@ def openneowindow1():
         #입력한 경로(숫자)에 txt파일서 덧쓴 폴더명을 받아와야 하며
         #txt파일의 경우 생성 후 위 과정 반복,,
         foldernomen2 = int(foldernomen2.get())
+        foldernomen = foldernomen.get()
         # txtfilenomen = int(txtfilenomen.get())
         PATH1 = pathurl
         PATH2 = PATH1 + f"\{foldernomen}"
@@ -263,18 +275,19 @@ def openneowindow1():
         file_opened = open(PATHTXT, "a", encoding="utf8")
         listsorted = sorted(listofinputname2)
         for ind, i in enumerate(listsorted):
-            file_opened.write(f"{i} :  \n")
+            file_opened.write(f"{i} : \n")
         file_opened.close()
 
 
     btn_w1_getdrugnames = Button(neowindow1, text="입력한 약물 txt로", bg="white", fg="white", \
-         command=partial(getinputnames,r"C:\OneDrive\DDB", combox_w1_sub.get(), ent_w1_newfilename))
+         command=partial(getinputnames,r"C:\OneDrive\DDB", combox_w1_sub, ent_w1_newfilename))
     btn_w1_getdrugnames.grid(row=16,column=6,sticky=N+W+E+S)
 
     #1.3.1.6 smiles 가져오기
     def getsmiles(pathurl, foldernomen, foldernomen2):
         #1. 경로설정
         PATH1 = pathurl
+        foldernomen = foldernomen.get()
         PATH2 = PATH1 + f"\{foldernomen}"
         txturl = PATH2 + f"\{foldernomen}_tableofcontents.txt"
         foldernomen2 = int(foldernomen2.get())
@@ -293,7 +306,7 @@ def openneowindow1():
         for ind, i in enumerate(tofindlist):
             if dict1[i] == "PASS":
                 pass
-            elif dict1[i] != " ":
+            elif dict1[i] != "":
                 dict11[i] = dict1[i]
                 pass
             else:
@@ -396,27 +409,27 @@ def openneowindow1():
             file_opened.write(f"{code} : {name}\n")
         file_opened.close()
 
-
-
-    btn_w1_getsmile = Button(neowindow1, text="smiles",command=partial(getsmiles,r"C:\OneDrive\DDB", combox_w1_sub.get(), ent_w1_newfilename))
+    btn_w1_getsmile = Button(neowindow1, text="smiles",command=partial(getsmiles,r"C:\OneDrive\DDB", combox_w1_sub, ent_w1_newfilename))
     btn_w1_getsmile.grid(row=16,column=7,sticky=N+W+E+S)
 
     #1.3.1.7 smile서 구조 얻기
-
     def getstrimg(pathurl, foldernomen, foldernomen2):
         #1. 경로설정
         PATH1 = pathurl
+        foldernomen = foldernomen.get()
         PATH2 = PATH1 + f"\{foldernomen}"
         txturl = PATH2 + f"\{foldernomen}_tableofcontents.txt"
         foldernomen2 = int(foldernomen2.get())
         PATH3 = PATH2 + f"\{getnamefromtoc(txturl, foldernomen2)}"
         txtnametohave = f"{getnamefromtoc(txturl, foldernomen2)}.txt"
         PATHTXT = PATH3 + f"\{txtnametohave}"
-
-        #2. 경로에 사진 폴더 생성하기
         foldernametohave = f"{getnamefromtoc(txturl, foldernomen2)}_pngs"
         checkfolderpath(PATH3, foldernametohave)
         PATH4 = PATH3 + f"\{foldernametohave}"
+
+        #2. 경로에 사진 폴더 생성하기
+        
+        
 
         #3. 구조 가져올 txt 열기
         dict1 = getdictfromtxt(PATHTXT, " : ")
@@ -461,12 +474,670 @@ def openneowindow1():
             print(list2[index])
         browser.close()
 
-
-    btn_w1_getstrimg = Button(neowindow1, text="구조",command=partial(getstrimg,r"C:\OneDrive\DDB", combox_w1_sub.get(), ent_w1_newfilename))
+    btn_w1_getstrimg = Button(neowindow1, text="구조",command=partial(getstrimg,r"C:\OneDrive\DDB", combox_w1_sub, ent_w1_newfilename))
     btn_w1_getstrimg.grid(row=17,column=7,sticky=N+W+E+S)
 
 
+def openneowindow3():
+    global neowindow3
+    neowindow3 = Toplevel(root)
+    neowindow3.geometry("1200x600+100+100")
+
+    label_w3_top = Label(neowindow3, text="폴더 이름을 입력하세요")
+    label_w3_top.grid(row=1,column=1,columnspan=5,sticky=N+W+E+S)
+    ent_w3_newfilename = Entry(neowindow3)
+    ent_w3_newfilename.grid(row=2,column=1,columnspan=4,sticky=N+W+E+S)
+
+    def multipleyviw(*args):
+        text_w3_engname.yview(*args)
+        text_w3_korname.yview(*args)
+
+    scrollbar_w3_engname = Scrollbar(neowindow3)
+    scrollbar_w3_engname.grid(row=10,column=8, rowspan = 5,sticky=N+W+E+S)
+
+    text_w3_engname = Text(neowindow3, width= 30, yscrollcommand=scrollbar_w3_engname.set, wrap = "none" )
+    text_w3_engname.grid(row=10,column=6,columnspan=2, rowspan = 5,sticky=N+W+E+S)
+    text_w3_korname = Text(neowindow3, width= 30, yscrollcommand=scrollbar_w3_engname.set, wrap = "none" )
+    text_w3_korname.grid(row=10,column=9,columnspan=2, rowspan = 5,sticky=N+W+E+S)
     
+    scrollbar_w3_engname.config(command=multipleyviw)
+
+    global listofsubs
+    combox_w3_sub = ttk.Combobox(neowindow3, values=listofsubs)
+    combox_w3_sub.current(0)
+    combox_w3_sub.grid(row=2,column=5,sticky=N+W+E+S)
+    #2. 사진 분자명 가져오기
+    def getdrugnamesformfolder(pathurl, foldernomen, foldernomen2):
+        #1. 경로설정
+        # foldernomen = foldernomen.get()
+        foldernomen2 = int(foldernomen2.get())
+        PATH1 = pathurl
+        PATH2 = PATH1 + f"\{foldernomen}"
+        txturl = PATH2+f"\{foldernomen}_tableofcontents.txt"
+        PATH3 = PATH2 + f"\{getnamefromtoc(txturl, foldernomen2)}"
+        txtnametohave = f"{getnamefromtoc(txturl, foldernomen2)}.txt"
+        PATHTXT = PATH3 + f"\{txtnametohave}"
+        foldernametohave = f"{getnamefromtoc(txturl, foldernomen2)}_pngs"
+        PATH4 = PATH3 + f"\{foldernametohave}"
+
+        #2. 폴더내 리스트 가져오기
+        list1 = os.listdir(PATH4)
+
+        #3. list1 중에서 png 파일만 가져오기
+        list2 = [] # list2는 사진 파일 이름 중의 약물이름이다.
+        for ind, i in enumerate(list1):
+            if i[i.index(".")+1:len(i)] == "png":
+                list2.append(i[0:i.index(".")])
+        return list2
+    #3. 한영 비교
+    def compareengetkor(pathurl, foldernomen, foldernomen2):
+        #1. 경로설정
+        foldernomen = foldernomen.get()
+        namelist = getdrugnamesformfolder(pathurl, foldernomen, foldernomen2)
+        foldernomen2 = int(foldernomen2.get())
+        PATH1 = pathurl
+        PATH2 = PATH1 + f"\{foldernomen}"
+        txturl = PATH2+f"\{foldernomen}_tableofcontents.txt"
+        PATH3 = PATH2 + f"\{getnamefromtoc(txturl, foldernomen2)}"
+        txtnametohave = f"{getnamefromtoc(txturl, foldernomen2)}.txt"
+        PATHTXT = PATH3 + f"\{txtnametohave}"
+        foldernametohave = f"{getnamefromtoc(txturl, foldernomen2)}_pngs"
+        PATH4 = PATH3 + f"\{foldernametohave}"
+
+        #2. 이름 가져오기
+        print("namelist는  " , namelist, "입니다.")
+
+        #3. db 가져오기
+        PATHDB = r"C:\OneDrive\DDB\DBtxtfiles\drugnamedb.txt"
+        dict_db = getdictfromtxt(PATHDB," : ")
+        # print(f"dict_db는 {dict_db} 입니다.")
+
+        #4. 챕터내 약물명 db와 비교
+        dict3 = {}
+        for ind, i in enumerate(namelist):
+            if i in list(dict_db.keys()):
+                dict3[i] = dict_db[i]
+            else:
+                dict3[i] = ""
+                pass
+        print(f"dict3는 {dict3} 입니다.")
+
+        #5. txt박스에 입력하기
+        #5.1 영어
+        text_w3_engname.delete("1.0",END)
+        for ind, i in enumerate(dict3.keys()):
+            text_w3_engname.insert(END, f"{str(i)}\n")
+
+        #5.2 한글
+        text_w3_korname.delete("1.0",END)
+        for ind, i in enumerate(dict3.values()):
+            text_w3_korname.insert(END, f"{str(i)}\n")
+
+    btn_w3_maketxt = Button(neowindow3, text = "파일폴더 검사", command=partial(compareengetkor, r"C:\OneDrive\DDB", combox_w3_sub, ent_w3_newfilename))
+    btn_w3_maketxt.grid(row=3,column=1,columnspan=4,sticky=N+W+E+S)
+    #4. 입력한 한국명 DB에 입력
+    def getinput(pathurl, foldernomen, foldernomen2):
+        #1. 경로
+        foldernomen = foldernomen.get()
+        namelist = getdrugnamesformfolder(pathurl, foldernomen, foldernomen2)
+        foldernomen2 = int(foldernomen2.get())
+        PATH1 = pathurl
+        PATH2 = PATH1 + f"\{foldernomen}"
+        txturl = PATH2+f"\{foldernomen}_tableofcontents.txt"
+        PATH3 = PATH2 + f"\{getnamefromtoc(txturl, foldernomen2)}"
+        txtnametohave = f"{getnamefromtoc(txturl, foldernomen2)}.txt"
+        PATHTXT = PATH3 + f"\{txtnametohave}"
+        foldernametohave = f"{getnamefromtoc(txturl, foldernomen2)}_pngs"
+        PATH4 = PATH3 + f"\{foldernametohave}"
+
+        PATHDB = r"C:\OneDrive\DDB\DBtxtfiles\drugnamedb.txt"
+        dict_db = getdictfromtxt(PATHDB," : ")
+
+        #2. 텍박스 내용 가져오기
+
+        eng = text_w3_engname.get("1.0", END).replace("\n","|").split("|")
+        eng = eng[:-2]
+        kor = text_w3_korname.get("1.0", END).replace("\n","|").split("|")
+        kor = kor[:-2]
+
+        print(eng, kor)
+        #3. db 딕셔너리에 추가
+        for ind, i in enumerate(eng):
+            dict_db[i] = kor[ind]
+
+        #4. db 정렬
+        dict_edited = {}
+        for ind, i in enumerate(sorted(dict_db.keys())):
+            dict_edited[i] = dict_db[i]
+        print(dict_edited)
+
+        #5. db 텍스트 화일에 쓰기
+        db_opened = open(PATHDB, "w", encoding="utf8")
+        for code, name in dict_edited.items():
+            db_opened.write(f'{code} : {name}\n')
+        db_opened.close
+        msgbox.showinfo("무챠쵸~", "Nomen tibi Pagayaro est.")
+
+    btn_w3_getnames = Button(neowindow3, text="smiles",command=partial(getinput,r"C:\OneDrive\DDB", combox_w3_sub, ent_w3_newfilename))
+    btn_w3_getnames.grid(row=16,column=7,sticky=N+W+E+S)
+
+def openneowindow4():
+    global neowindow4
+    neowindow4 = Toplevel(root)
+    neowindow4.geometry("1200x700+100+100")
+
+    label_w4_top = Label(neowindow4, text="폴더 이름을 입력하세요")
+    label_w4_top.grid(row=1,column=1,columnspan=5,sticky=N+W+E+S)
+    ent_w4_newfilename = Entry(neowindow4)
+    ent_w4_newfilename.grid(row=2,column=1,columnspan=4,sticky=N+W+E+S)
+
+    scrollbar_w4_text = Scrollbar(neowindow4)
+    scrollbar_w4_text.grid(row=10,column=10, rowspan = 5,sticky=N+W+E+S)
+    text_w4_screen = Text(neowindow4, width=30)
+    text_w4_screen.grid(row=10,column=6,columnspan=4, rowspan = 5,sticky=N+W+E+S)
+    scrollbar_w4_text.config(command=text_w4_screen.yview)
+
+    global listofsubs
+    combox_w4_sub = ttk.Combobox(neowindow4, values=listofsubs)
+    combox_w4_sub.current(0)
+    combox_w4_sub.grid(row=2,column=5,sticky=N+W+E+S)
+
+    #2. 사진 분자명 가져오기
+    def getdrugnamesformfolder(pathurl, foldernomen, foldernomen2):
+        #1. 경로설정
+        # foldernomen = foldernomen.get()
+        foldernomen2 = int(foldernomen2.get())
+        PATH1 = pathurl
+        PATH2 = PATH1 + f"\{foldernomen}"
+        txturl = PATH2+f"\{foldernomen}_tableofcontents.txt"
+        PATH3 = PATH2 + f"\{getnamefromtoc(txturl, foldernomen2)}"
+        txtnametohave = f"{getnamefromtoc(txturl, foldernomen2)}.txt"
+        PATHTXT = PATH3 + f"\{txtnametohave}"
+        foldernametohave = f"{getnamefromtoc(txturl, foldernomen2)}_pngs"
+        PATH4 = PATH3 + f"\{foldernametohave}"
+
+        #2. 폴더내 리스트 가져오기
+        list1 = os.listdir(PATH4)
+
+        #3. list1 중에서 png 파일만 가져오기
+        list2 = [] # list2는 사진 파일 이름 중의 약물이름이다.
+        for ind, i in enumerate(list1):
+            if i[i.index(".")+1:len(i)] == "png":
+                list2.append(i[0:i.index(".")])
+        return list2
+
+    #3. 선택한 과목의 챕터 사진폴더 한글명유무 검사
+    def selectfolder(pathurl, foldernomen, foldernomen2):
+        #1. 경로설정
+        foldernomen = foldernomen.get()
+        namelist = getdrugnamesformfolder(pathurl, foldernomen, foldernomen2)
+        foldernomen2 = int(foldernomen2.get())
+        PATH1 = pathurl
+        PATH2 = PATH1 + f"\{foldernomen}"
+        txturl = PATH2+f"\{foldernomen}_tableofcontents.txt"
+        PATH3 = PATH2 + f"\{getnamefromtoc(txturl, foldernomen2)}"
+        txtnametohave = f"{getnamefromtoc(txturl, foldernomen2)}.txt"
+        PATHTXT = PATH3 + f"\{txtnametohave}"
+        foldernametohave = f"{getnamefromtoc(txturl, foldernomen2)}_pngs"
+        PATH4 = PATH3 + f"\{foldernametohave}"
+
+        #2. db 가져오기
+        PATHDB = r"C:\OneDrive\DDB\DBtxtfiles\drugnamedb.txt"
+        dict_db = getdictfromtxt(PATHDB," : ")
+        # print(f"dict_db는 {dict_db} 입니다.")
+
+        #3. 챕터내 약물명 db와 비교 : db에 있는 애만 dict3에 넣는다.
+        dict3 = {}
+        for ind, i in enumerate(namelist):
+            if i in list(dict_db.keys()):
+                dict3[i] = dict_db[i]
+            else:
+                dict3[i] = ""
+                pass
+        print(f"dict3는 {dict3} 입니다.")
+
+        #4. dict3 value 중 ""이 있으면 오류 메시지를 띄우고 텍스트창에 오류 약물명을 입력한다.
+        text_w4_screen.delete("1.0", END)
+        check_w4_1 = 0
+        text_w4_screen.insert(END, "*오류*오류*오류선생*오류*오류* : 한글명이 없는 약물이 아래와 같읍니다.\n")
+        for ind, i in enumerate(dict3.values()):
+            if i == "":
+                text_w4_screen.insert(END, f"{list(dict3.keys())[ind]}\n")
+                check_w4_1 +=1
+            else:
+                pass
+        
+        if check_w4_1 == 0:
+            text_w4_screen.delete("1.0", END)
+            text_w4_screen.insert(END, f"이상 無,, 작업을 진행하십쇼...")
+            print("해당과목챕터에는 이상이 없읍니다...")
+        else:
+            text_w4_screen.update()
+            print(text_w4_screen.get("1.0", END))
+            time.sleep(0.5)
+            neowindow4.destroy()
+
+    btn_w4_maketxt = Button(neowindow4, text = "파일폴더 검사", command=partial(selectfolder, r"C:\OneDrive\DDB", combox_w4_sub, ent_w4_newfilename))
+    btn_w4_maketxt.grid(row=3,column=1,columnspan=4,sticky=N+W+E+S)
+
+    #4. 옵션창
+        #4.1 글자 색상
+    fontcolourlist = ["폰트색(기본 : 파)", "red", "yellow", "green", "blue", "black"]
+    combox_w4_fontcol = ttk.Combobox(neowindow4, values=fontcolourlist,width=15, state="readonly")
+    combox_w4_fontcol.current(0)
+    combox_w4_fontcol.grid(row=2, column=6, sticky=W + E + N + S)
+
+        #4.2 글자체
+    fontlist = ["폰트(기본 : 천년)", "쿠키런", "천년", "우리금융", "한바탕"]
+    combox_w4_font = ttk.Combobox(neowindow4, values=fontlist,width=15, state="readonly")
+    combox_w4_font.current(0)
+    combox_w4_font.grid(row=3, column=6, sticky=W + E + N + S)
+
+        #4.3 각개파일 해상도
+    listofindimgsize = ["800x800","400x400", "자율"]
+    combox_w4_indimgsize = ttk.Combobox(neowindow4,width=15,values = listofindimgsize)#, state="readonly")
+    combox_w4_indimgsize.current(0)
+    combox_w4_indimgsize.grid(row=2, column=7, sticky=W + E + N + S)
+
+        #4.4 테이블 레이아웃
+    layoutlist = ["5x6","4x5","4x4", "5x5","6x6", "5x7", "자율"]
+    combox_w4_layout = ttk.Combobox(neowindow4,width=15, values = layoutlist)#, state = "readonly")
+    combox_w4_layout.current(0)
+    combox_w4_layout.grid(row=3, column=7, sticky=W + E + N + S)
+
+        #4.5 약물명 포함여부
+    Yesorno = ["약품명 포함?(예)", "예", "아니오"]
+    combox_w4_contkor = ttk.Combobox(neowindow4,width=15, values=Yesorno, state="readonly")
+    combox_w4_contkor.current(0)
+    combox_w4_contkor.grid(row=2, column=8, sticky=W + E + N + S)
+
+
+    #5. 생성함수들 및 버튼
+    #5.1 폴더 내 이미지 가져오는 함수
+    def getimgsfromfolder(pathurl, foldernomen, foldernomen2):
+        foldernomen = foldernomen.get()
+        namelist = getdrugnamesformfolder(pathurl, foldernomen, foldernomen2)
+        foldernomen2 = int(foldernomen2.get())
+        PATH1 = pathurl
+        PATH2 = PATH1 + f"\{foldernomen}"
+        txturl = PATH2+f"\{foldernomen}_tableofcontents.txt"
+        PATH3 = PATH2 + f"\{getnamefromtoc(txturl, foldernomen2)}"
+        txtnametohave = f"{getnamefromtoc(txturl, foldernomen2)}.txt"
+        PATHTXT = PATH3 + f"\{txtnametohave}"
+        foldernametohave = f"{getnamefromtoc(txturl, foldernomen2)}_pngs"
+        PATH4 = PATH3 + f"\{foldernametohave}"
+        PATH5 = PATH3 + f"\{foldernametohave}" + r"\\"
+        
+        
+        listofimgs = glob.glob(PATH5+"*.png")
+        return listofimgs
+        # img9 = Image.open(listofimgs[1])
+        # img9.show()
+
+    #5.2 리스트 내 이미지의 크기를 변경해 새로운 리스트로 반환하느 함수
+    def changeimgsize(listtochange, sizelist):
+        list_tochange = listtochange
+        list_size = sizelist
+        
+        to_wid = int(list_size[0])
+        to_hei = int(list_size[1])
+        to_widheiratio = float(to_wid/to_hei)
+        # print(f"변경할 사이즈는 {to_wid} x {to_hei} 입니다. ratio는 {to_widheiratio} 입니다.")
+        #이미지 크기 변경 for문
+        resultlist = []
+        for ind, i in enumerate(list_tochange):
+            #1.1. 이미지를 열고 크기를 알려준다.
+            img = Image.open(i)
+            img_wid = int(img.size[0])
+            img_hei = int(img.size[1])
+            img_widheiratio = float(img_wid/img_hei)
+
+            # print(f"{ind}번 이미지의 사이즈는 {img_wid} x {img_hei} 입니다,,\
+            #     이 이미지의 ratio는 {img_widheiratio} 입니다.")
+            if img_widheiratio >= to_widheiratio:
+                #1.2.1 처리할 이미지의 ratio가 기준 ratio보다 클 경우
+                resultwid = to_wid
+                resulthei = int(math.floor(to_wid/img_widheiratio))
+                img2 = img.resize((resultwid,resulthei))
+                # print(f"이 녀석은 결국 {resultwid} x {resulthei} 가 되었네영")
+                resultlist.append(img2)
+            else:
+                #1.2.2 반대
+                resultwid = int(math.floor(to_hei*img_widheiratio))
+                resulthei = to_hei
+                img2 = img.resize((resultwid,resulthei))
+                # print(f"이 녀석은 결국 {resultwid} x {resulthei} 가 되었네영")
+                resultlist.append(img2)
+        return resultlist
+        print("크기 변경 완료")
+    # changeimgsize(getimgsfromfolder(r"C:\OneDrive\DDB", combox_w4_sub, ent_w4_newfilename), [1,2])
+    
+
+    def calculategoodsize(eng, kor, wid_box, hei_box, font, ind):
+
+        Stextinbox_eng = eng
+        Stextinbox_kor = kor
+        Sfont_font = font
+        Stxtbox_wid = wid_box
+        Stxtbox_hei = hei_box
+        len_engname = len(Stextinbox_eng)
+        len_korname = len(Stextinbox_kor)
+        # print(f"Stxtbox = {Stxtbox_wid}x{Stxtbox_hei}")
+
+        temp_fontsize_eng = int(Stxtbox_hei/4)
+        temp_fontsize_kor = int(Stxtbox_hei/4)
+        temp_fontstyle_eng = ImageFont.truetype(font = Sfont_font, size = temp_fontsize_eng)
+        temp_fontstyle_kor = ImageFont.truetype(font = Sfont_font, size = temp_fontsize_kor)
+        temp_wid_engbox = temp_fontstyle_eng.getbbox(Stextinbox_eng)[2]
+        temp_wid_korbox = temp_fontstyle_kor.getbbox(Stextinbox_kor)[2]
+        temp_hei_engbox = temp_fontstyle_eng.getbbox(Stextinbox_eng)[3]
+        temp_hei_korbox = temp_fontstyle_kor.getbbox(Stextinbox_kor)[3]
+        temp_wid_margin = Stxtbox_wid - max(temp_wid_engbox, temp_wid_korbox)
+        temp_hei_margin = Stxtbox_hei - (temp_hei_engbox+temp_hei_korbox)
+        linewid = int(int(Stxtbox_wid)/200)
+        var1 = math.floor(linewid/2)
+        
+
+        # print(f"변경전{'{0:0=4}'.format(ind)}. {Stextinbox_eng}: 길이는 {len_engname}, 박스크기는 {temp_wid_engbox} x {temp_hei_engbox}|{Stextinbox_kor} : 길이는 {len_korname}, 박스크기는 {temp_wid_korbox} x {temp_hei_korbox}                          {max(temp_wid_engbox, temp_wid_korbox)} x {temp_hei_engbox+temp_hei_korbox}, margin is {temp_wid_margin}x{temp_hei_margin}")
+
+        if temp_wid_margin > 2*linewid and temp_hei_margin >2*linewid:
+            while temp_wid_margin >6*linewid and temp_hei_margin >4*linewid:
+                temp_fontsize_eng += var1
+                temp_fontsize_kor += var1
+                temp_fontstyle_eng = ImageFont.truetype(font = Sfont_font, size = temp_fontsize_eng)
+                temp_fontstyle_kor = ImageFont.truetype(font = Sfont_font, size = temp_fontsize_kor)
+                temp_wid_engbox = temp_fontstyle_eng.getbbox(Stextinbox_eng)[2]
+                temp_wid_korbox = temp_fontstyle_kor.getbbox(Stextinbox_kor)[2]
+                temp_hei_engbox = temp_fontstyle_eng.getbbox(Stextinbox_eng)[3]
+                temp_hei_korbox = temp_fontstyle_kor.getbbox(Stextinbox_kor)[3]
+                temp_wid_margin = Stxtbox_wid - max(temp_wid_engbox, temp_wid_korbox)
+                temp_hei_margin = Stxtbox_hei - (temp_hei_engbox+temp_hei_korbox)
+                # print(f"{'{0:0=4}'.format(ind)}. {Stextinbox_eng}: 길이는 {len_engname}, 박스크기는 {temp_wid_engbox} x {temp_hei_engbox}|{Stextinbox_kor} : 길이는 {len_korname}, 박스크기는 {temp_wid_korbox} x {temp_hei_korbox}                          {max(temp_wid_engbox, temp_wid_korbox)} x {temp_hei_engbox+temp_hei_korbox}, margin is {temp_wid_margin}x{temp_hei_margin}")
+
+        elif temp_wid_margin <=2*linewid and temp_hei_margin >2*linewid :
+            while temp_wid_margin <=6*linewid:
+                temp_fontsize_eng -= var1
+                temp_fontsize_kor -= var1
+                temp_fontstyle_eng = ImageFont.truetype(font = Sfont_font, size = temp_fontsize_eng)
+                temp_fontstyle_kor = ImageFont.truetype(font = Sfont_font, size = temp_fontsize_kor)
+                temp_wid_engbox = temp_fontstyle_eng.getbbox(Stextinbox_eng)[2]
+                temp_wid_korbox = temp_fontstyle_kor.getbbox(Stextinbox_kor)[2]
+                temp_hei_engbox = temp_fontstyle_eng.getbbox(Stextinbox_eng)[3]
+                temp_hei_korbox = temp_fontstyle_kor.getbbox(Stextinbox_kor)[3]
+                temp_wid_margin = Stxtbox_wid - max(temp_wid_engbox, temp_wid_korbox)
+                temp_hei_margin = Stxtbox_hei - (temp_hei_engbox+temp_hei_korbox)
+                # print(f"{'{0:0=4}'.format(ind)}. {Stextinbox_eng}: 길이는 {len_engname}, 박스크기는 {temp_wid_engbox} x {temp_hei_engbox}|{Stextinbox_kor} : 길이는 {len_korname}, 박스크기는 {temp_wid_korbox} x {temp_hei_korbox}                          {max(temp_wid_engbox, temp_wid_korbox)} x {temp_hei_engbox+temp_hei_korbox}, margin is {temp_wid_margin}x{temp_hei_margin}")
+
+
+        elif temp_wid_margin >2*linewid and temp_hei_margin <=2*linewid :
+            while temp_wid_margin >6*linewid and temp_hei_margin <=4*linewid:
+                temp_fontsize_eng -= var1
+                temp_fontsize_kor -= var1
+                temp_fontstyle_eng = ImageFont.truetype(font = Sfont_font, size = temp_fontsize_eng)
+                temp_fontstyle_kor = ImageFont.truetype(font = Sfont_font, size = temp_fontsize_kor)
+                temp_wid_engbox = temp_fontstyle_eng.getbbox(Stextinbox_eng)[2]
+                temp_wid_korbox = temp_fontstyle_kor.getbbox(Stextinbox_kor)[2]
+                temp_hei_engbox = temp_fontstyle_eng.getbbox(Stextinbox_eng)[3]
+                temp_hei_korbox = temp_fontstyle_kor.getbbox(Stextinbox_kor)[3]
+                temp_wid_margin = Stxtbox_wid - max(temp_wid_engbox, temp_wid_korbox)
+                temp_hei_margin = Stxtbox_hei - (temp_hei_engbox+temp_hei_korbox)
+                # print(f"{'{0:0=4}'.format(ind)}. {Stextinbox_eng}: 길이는 {len_engname}, 박스크기는 {temp_wid_engbox} x {temp_hei_engbox}|{Stextinbox_kor} : 길이는 {len_korname}, 박스크기는 {temp_wid_korbox} x {temp_hei_korbox}                          {max(temp_wid_engbox, temp_wid_korbox)} x {temp_hei_engbox+temp_hei_korbox}, margin is {temp_wid_margin}x{temp_hei_margin}")
+
+
+        elif temp_wid_margin <=2*linewid and temp_hei_margin <=2*linewid :
+            while temp_wid_margin <=6*linewid and temp_hei_margin <=4*linewid:
+                temp_fontsize_eng -= var1
+                temp_fontsize_kor -= var1
+                temp_fontstyle_eng = ImageFont.truetype(font = Sfont_font, size = temp_fontsize_eng)
+                temp_fontstyle_kor = ImageFont.truetype(font = Sfont_font, size = temp_fontsize_kor)
+                temp_wid_engbox = temp_fontstyle_eng.getbbox(Stextinbox_eng)[2]
+                temp_wid_korbox = temp_fontstyle_kor.getbbox(Stextinbox_kor)[2]
+                temp_hei_engbox = temp_fontstyle_eng.getbbox(Stextinbox_eng)[3]
+                temp_hei_korbox = temp_fontstyle_kor.getbbox(Stextinbox_kor)[3]
+                temp_wid_margin = Stxtbox_wid - max(temp_wid_engbox, temp_wid_korbox)
+                temp_hei_margin = Stxtbox_hei - (temp_hei_engbox+temp_hei_korbox)
+        # print(f"변경후{'{0:0=4}'.format(ind)}. {Stextinbox_eng}: 길이는 {len_engname}, 박스크기는 {temp_wid_engbox} x {temp_hei_engbox}|{Stextinbox_kor} : 길이는 {len_korname}, 박스크기는 {temp_wid_korbox} x {temp_hei_korbox}                          {max(temp_wid_engbox, temp_wid_korbox)} x {temp_hei_engbox+temp_hei_korbox}, margin is {temp_wid_margin}x{temp_hei_margin}")
+        result = [temp_fontsize_eng, temp_fontsize_kor]
+        return result
+
+        
+
+
+    #5.3 약물명 리스트를 받고,, 입력한 크기에 맞는 이미지를 생성한다. 그 이미지는 리스트로 반환한다.
+    def maketextboximg(dictofdrugnames, sizelist, font, fontcol, drugnameYoN):
+        #0. 이미지 제작에 실사용할 변수 먼저 정해둘 것..
+        """
+        Stxtbox_wid - 박스의 길이
+        Stxtbox_hei - 박스의 높이
+        Sbg - 배경색
+        Sfont_font - 폰트
+        Sfont_col - 글자 색상
+        Sfont_size - 글자 크기
+        Stextinbox_kor - 한국 이름
+        Stextinbox_eng - 영어 이름
+        SkornameYoN - 한글 포함 여부
+        SPATHTABLESAVE - 테이블 저장경로
+        SPATHIMGSAVE - 개별이미지 저장경로
+        """
+        dict1 = dictofdrugnames
+        size = sizelist
+        font = font.get()
+        fontcol = fontcol.get()
+        drugnameYoN = drugnameYoN.get()
+
+        #1. 박스 크기 결정
+        Stxtbox_wid = int(size[0])
+        Stxtbox_hei = int(size[1])
+
+        #2. 글자색 결정
+        if fontcol == "red":
+            Sfont_col = "RGBA(255, 051, 051, 255)"
+        elif fontcol == "black":
+            Sfont_col = "RGBA(000, 051, 255, 255)"
+        elif fontcol == "yellow":
+            Sfont_col = "RGBA(255, 204,000, 255)"
+        elif fontcol == "grenn":
+            Sfont_col = "RGBA(000, 153, 000, 255)"
+        else:
+            #기본색, 파란색임
+            Sfont_col = "RGBA(000, 051, 255, 255)"
+        
+        #3. 폰트 설정
+        if font == "쿠키런":
+            Sfont_font = r"C:\OneDrive\DDB\fonts\CookieRun Regular.ttf"
+        elif font == "한바탕":
+            Sfont_font = r"C:\OneDrive\DDB\fonts\HANBatang.ttf"
+        elif font == "우리금융":
+            Sfont_font = r"C:\OneDrive\DDB\fonts\우리다움 R.ttf"
+        else:
+            #기본폰트, 천년어쩌구임
+            Sfont_font = r"C:\OneDrive\DDB\fonts\경기천년바탕_Regular.ttf"
+        
+        #4. 기타 변수 설정
+        global bgcolor
+        Sbg = bgcolor
+        # Stextinbox_kor - 한국 이름 > 이미지 만들기 들어가야 결정 가능,,
+        # Stextinbox_eng - 영어 이름 > 이미지 만들기 들어가야 결정 가능,,
+        # SkornameYoN - 한글 포함 여부
+        # SPATHTABLESAVE - 테이블 저장경로
+        # SPATHIMGSAVE - 개별이미지 저장경로
+
+
+        #6. 텍스트 이미지 만들기
+        resultboximg = [] # 생성한 이미지 담을 리스트
+        dict1_keys = list(dict1.keys())
+        dict1_values = list(dict1.values())
+        print(Stxtbox_wid, Stxtbox_hei)
+
+        for ind, i in enumerate(dict1_keys):
+            #4.1 변수 설정
+            Stextinbox_eng = dict1_keys[ind]
+            Stextinbox_kor = dict1_values[ind]
+
+            #5.1 파라메다 설정
+            txtsizelist = calculategoodsize(Stextinbox_eng, Stextinbox_kor, Stxtbox_wid, Stxtbox_hei, Sfont_font, ind)
+            len_engname = len(Stextinbox_eng)
+            len_korname = len(Stextinbox_kor)
+            fontsize_eng = int(txtsizelist[0])
+            fontsize_kor = int(txtsizelist[1])
+            fontstyle_eng = ImageFont.truetype(font = Sfont_font, size = fontsize_eng)
+            fontstyle_kor = ImageFont.truetype(font = Sfont_font, size = fontsize_kor)
+            wid_engbox = fontstyle_eng.getbbox(Stextinbox_eng)[2]
+            wid_korbox = fontstyle_kor.getbbox(Stextinbox_kor)[2]
+            hei_engbox = fontstyle_eng.getbbox(Stextinbox_eng)[3]
+            hei_korbox = fontstyle_kor.getbbox(Stextinbox_kor)[3]
+            wid_margin = Stxtbox_wid - max(wid_engbox, wid_korbox)
+            hei_margin = Stxtbox_hei - (hei_engbox+hei_korbox)
+            print(f"{'{0:0=4}'.format(ind)}. {Stextinbox_eng}: 길이는 {len_engname}, 박스크기는 {wid_engbox} x {hei_engbox}|{Stextinbox_kor} : 길이는 {len_korname}, 박스크기는 {wid_korbox} x {hei_korbox}                          {max(wid_engbox, wid_korbox)} x {hei_engbox+hei_korbox}, margin is {wid_margin}x{hei_margin}")
+
+            #5.2 이미지 제작 시작
+
+            if drugnameYoN == "아니오":
+                x_engtxtbox = int((Stxtbox_wid - wid_engbox)/2)
+                y_engtxtbox = int(hei_margin/2)
+                x_kortxtbox = int((Stxtbox_wid - wid_korbox)/2)
+                y_kortxtbox = y_engtxtbox + int(hei_engbox)
+
+                textedimg = Image.new("RGBA",(Stxtbox_wid, Stxtbox_hei), color= bgcolor)
+                draw = ImageDraw.Draw(textedimg)
+                draw.rectangle(((0,0),(Stxtbox_wid,Stxtbox_hei)), outline="red", width=int(Stxtbox_wid/200))
+                draw.text((x_engtxtbox, y_engtxtbox), " ", font = fontstyle_eng, fill = Sfont_col)
+                draw.text((x_kortxtbox, y_kortxtbox), " ", font = fontstyle_kor, fill = Sfont_col)
+                resultboximg.append(textedimg)
+                
+            else:
+                x_engtxtbox = int((Stxtbox_wid - wid_engbox)/2)
+                y_engtxtbox = int(hei_margin/2)
+                x_kortxtbox = int((Stxtbox_wid - wid_korbox)/2)
+                y_kortxtbox = y_engtxtbox + int(hei_engbox)
+
+                textedimg = Image.new("RGBA",(Stxtbox_wid, Stxtbox_hei), color= bgcolor)
+                draw = ImageDraw.Draw(textedimg)
+                draw.rectangle(((0,0),(Stxtbox_wid,Stxtbox_hei)), outline="red", width=int(Stxtbox_wid/200))
+                draw.text((x_engtxtbox, y_engtxtbox), Stextinbox_eng, font = fontstyle_eng, fill = Sfont_col)
+                draw.text((x_kortxtbox, y_kortxtbox), Stextinbox_kor, font = fontstyle_kor, fill = Sfont_col)
+                resultboximg.append(textedimg)
+        return resultboximg
+
+
+
+
+
+        #df
+        #draw.rectangle((point1, point2), outline=(0, 0, 255), width=3)
+
+
+
+    #test함수
+    def test1(pathurl, foldernomen, foldernomen2):
+        list_test = getimgsfromfolder(pathurl, foldernomen, foldernomen2)
+        foldernomen = foldernomen.get()
+        namelist = getdrugnamesformfolder(pathurl, foldernomen, foldernomen2)
+        foldernomen2 = int(foldernomen2.get())
+        PATH1 = pathurl
+        PATH2 = PATH1 + f"\{foldernomen}"
+        txturl = PATH2+f"\{foldernomen}_tableofcontents.txt"
+        PATH3 = PATH2 + f"\{getnamefromtoc(txturl, foldernomen2)}"
+        txtnametohave = f"{getnamefromtoc(txturl, foldernomen2)}.txt"
+        PATHTXT = PATH3 + f"\{txtnametohave}"
+        foldernametohave = f"{getnamefromtoc(txturl, foldernomen2)}_pngs"
+        PATH4 = PATH3 + f"\{foldernametohave}"
+        PATH5 = PATH3 + f"\{foldernametohave}" + r"\\"
+
+
+        #0. 테이블 저장할 폴더 생성하기
+        #이름 영어, 한글 가져오기
+        #2. db 가져오기
+        PATHDB = r"C:\OneDrive\DDB\DBtxtfiles\drugnamedb.txt"
+        dict_db = getdictfromtxt(PATHDB," : ")
+        # print(f"dict_db는 {dict_db} 입니다.")
+
+        #3. 챕터내 약물명 db와 비교 : db에 있는 애만 dict3에 넣는다.
+        dict3 = {}
+        for ind, i in enumerate(namelist):
+            if i in list(dict_db.keys()):
+                dict3[i] = dict_db[i]
+            else:
+                dict3[i] = ""
+                pass
+        # print(f"dict3는 {dict3} 입니다.")
+
+        #콤박스서 이미지 크기 가져오는 코드
+        widthofimg = int(combox_w4_indimgsize.get()[0:combox_w4_indimgsize.get().rfind("x")])
+        heightofimg = int(combox_w4_indimgsize.get()[combox_w4_indimgsize.get().rfind("x")+1:])
+        # 텍스트이미지의 크기 결정
+        #changeimgsize(list_test, [widthofimg,heightofimg])
+
+        #텍스트부분 사진 만드는 함수 정의
+        global bgcolor
+        bgcolor = "RGBA(255,255,255,255)"
+
+        #제작한 텍스트박스 리스트로 받아오기
+        txtboxlist = maketextboximg(dict3, [widthofimg,int(heightofimg*3/8)], combox_w4_font, combox_w4_fontcol, combox_w4_contkor)
+        # print(txtboxlist)
+
+        #사진의 크기 변경 > 
+        listofadjustedimg = changeimgsize(list_test, [widthofimg,int(heightofimg*5/8)])
+        # print(namelist)
+        # print(listofadjustedimg)
+
+        listofwholeimg = []
+        for i in range(0, len(txtboxlist)):
+            resultimg = Image.new("RGBA", (widthofimg, heightofimg), color = bgcolor)
+            photo = Image.open(listofadjustedimg[i])
+            txtbox = Image.open(txtboxlist[i])
+            wid = int(photo.size[0])
+            hei = int(photo.size[1])
+            ratio = float(wid/hei)
+            ratio_critaria = float((8*widthofimg)/(5*heightofimg))
+            widmargin = int((widthofimg-wid)/2)
+            heimargin = int(((5*heightofimg/8)-hei)/2)
+
+            if ratio >= ratio_critaria:
+                resultimg.paste(photo,(0,heimargin))
+                resultimg.paste(txtbox, (0,int(5*heightofimg/8)))
+            else:
+                resultimg.paste(photo,(widmargin,0))
+                resultimg.paste(txtbox, (0,int(5*heightofimg/8)))
+            listofwholeimg.append(resultimg)
+            resultimg.show()
+        print(resultimg)
+
+
+
+
+            
+
+
+
+
+
+        
+
+        #합치는 함수 정의
+        
+
+
+
+    
+    btn_w4_test = Button(neowindow4, text = "제작중테스트", command=partial(getimgsfromfolder, r"C:\OneDrive\DDB", combox_w4_sub, ent_w4_newfilename))
+    btn_w4_test.grid(row=30,column=1,columnspan=4,sticky=N+W+E+S)
+
+    btn_w4_test2 = Button(neowindow4, text = "테스트1", command=partial(test1, r"C:\OneDrive\DDB", combox_w4_sub, ent_w4_newfilename))
+    btn_w4_test2.grid(row=31,column=1,columnspan=4,sticky=N+W+E+S)
+
+    btn_w4_test3 = Button(neowindow4, text = "테스트2", command=partial(getimgsfromfolder, r"C:\OneDrive\DDB", combox_w4_sub, ent_w4_newfilename))
+    btn_w4_test3.grid(row=32,column=1,columnspan=4,sticky=N+W+E+S)
+
+
+
+    #구상,, 배경은 투명해야 하는가 아님 흰색이어야 하는가..
+    #해결책,, 사진 만드는 함수 때로 만들고 이 함수가 투명여부 선택받아,, table 제작 시에는 흰배경, 아님 투명배경이 되도록 하는 방법이 있다.
+    #구상... txt이미지 만드는애, txt 딸린 개별사진 제작기, table 제작기 ,,,사진 크기 조정하는 함수&저장함수, 는 개별생성, 
+
+
+    
+
 
 
 
@@ -511,6 +1182,12 @@ btn_sortdb.grid(row=0, column=2,sticky=N+W+E+S)
 
 btn_openneowindow1 = Button(root, text="약물구조", width=20,command=openneowindow1)
 btn_openneowindow1.grid(row=1, column=7,sticky=N+W+E+S)
+
+btn_openneowindow3 = Button(root, text="한글", width=20,command=openneowindow3)
+btn_openneowindow3.grid(row=2, column=7,sticky=N+W+E+S)
+
+btn_openneowindow4 = Button(root, text="사진", width=20,command=openneowindow4)
+btn_openneowindow4.grid(row=3, column=7,sticky=N+W+E+S)
 
 # btn_openneowindow2 = Button(root, text="DB에 한글명 넣기", width=20, command=openneowindow3)
 # btn_openneowindow2.grid(row=2, column=7,sticky=N+W+E+S)
