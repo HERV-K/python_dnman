@@ -752,6 +752,11 @@ def openneowindow4():
             time.sleep(0.5)
             neowindow4.destroy()
 
+        btn_w4_drugnum = Button(neowindow4, text = "")
+        btn_w4_drugnum.grid(row=3, column=5, sticky = E+W+S+N)
+
+        btn_w4_drugnum.config(text = len(list(dict3.keys())))
+
     btn_w4_maketxt = Button(neowindow4, text = "파일폴더 검사", command=partial(selectfolder, r"C:\OneDrive\DDB", combox_w4_sub, ent_w4_newfilename))
     btn_w4_maketxt.grid(row=3,column=1,columnspan=4,sticky=N+W+E+S)
 
@@ -808,6 +813,7 @@ def openneowindow4():
         return listofimgs
         # img9 = Image.open(listofimgs[1])
         # img9.show()
+
 
     #5.2 리스트 내 이미지의 크기를 변경해 새로운 리스트로 반환하느 함수
     def changeimgsize(listtochange, sizelist):
@@ -1093,7 +1099,7 @@ def openneowindow4():
 
         #텍스트부분 사진 만드는 함수 정의
         global bgcolor
-        bgcolor = "RGBA(255,255,255,255)"
+        bgcolor = "RGBA(255,255,255,0)"
 
         #제작한 텍스트박스 리스트로 받아오기
         txtboxlist = maketextboximg(dict3, [widthofimg,int(heightofimg*3/8)], combox_w4_font, combox_w4_fontcol, "Y")
@@ -1106,7 +1112,7 @@ def openneowindow4():
 
         listofwholeimg = []
         for i in range(0, len(txtboxlist)):
-            resultimg = Image.new("RGBA", (widthofimg, heightofimg), color = bgcolor)
+            resultimg = Image.new("RGBA", (widthofimg, heightofimg), color = "RGBA(255,255,255,0)")
             photo = listofadjustedimg[i]
             txtbox = txtboxlist[i]
             wid = int(photo.size[0])
